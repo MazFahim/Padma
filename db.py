@@ -1,8 +1,13 @@
 from pymongo import MongoClient
-from config import MONGO_URI
+# from config import MONGO_URI
 from datetime import datetime
-from bson import ObjectId
+# from bson import ObjectId
 from cryptography.fernet import Fernet
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+MONGO_URI = os.getenv("MONGO_URI")
 
 client = MongoClient(MONGO_URI)
 db = client["padma"]
