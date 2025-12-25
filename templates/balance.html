@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balances</title>
+    <style>
+        body, nav {
+            margin: 0 ;
+            padding: 0;
+        }
+        body {
+            overflow-x: hidden;
+        }
+        #parent{
+            margin-left: 15px;
+            margin-right: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 98%;
+            gap: 20px;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .column{
+            padding: 20px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+        .column h2 {
+            margin: 0;
+            font-size: 18px;
+            text-align: center;
+        }
+        .wish-input {
+            width: 70%;
+            padding: 4px;
+        }
+        .wish-row button {
+            background-color: #4caf50;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .wishlist-container{
+            margin-left: 15px;
+            margin-right: 15px;
+            padding-right: 15px;
+            width: 100%;
+        }
+
+        .wishlist-container select {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 12px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .wishlist-container select:focus {
+            border-color: #4caf50;
+            outline: none;
+        }
+        .wish-row button:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        select {
+            width: 80%;
+            padding: 4px;
+            text-align: center;
+        }
+        .delete-btn {
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .valueInput {
+            width: 100px;
+            padding: 3px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #daily{
+            margin-left: 15px;
+            margin-right: 15px;
+            margin-bottom: 15px;
+            padding-right: 15px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        #resetDailyBtn{
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        #headerContent {
+            margin-left: 15px;
+            margin-right: 15px;
+            padding-right: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .hustle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .hustle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .hustle-button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .modal{
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 220px;
+            text-align: center;
+            border-radius: 8px;
+        }
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-content input[type="number"] {
+            width: 80%;
+            padding: 8px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .modal-content button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .modal-content button:hover {
+         background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    {% include '_navbar.html' %}  
+
+    <div id="headerContent">
+        <h1>Balance Statements</h1>
+        <div style="margin-top: 30px;">
+            <strong>Date</strong>
+            <span id="dailyDate">{{ dailyData.date }}</span>
+        </div>
+    </div>
+
+    <div>            
+        <!-- daily -->
+        <h2 style="margin-left: 15px;">Daily</h2>
+        <div id="daily">
+            <div>
+                <strong>Budget</strong>
+                <input type="number" name="dailyBudget" id="dailyBudget" value="{{ dailyData.budget }}"
+                class="valueInput" onchange="updateDaily('budget', this.value)">
+            </div>
+            <div>
+                <strong>Expense</strong>
+                <input type="number" name="dailyExpense" id="dailyExpense" value="{{ dailyData.expenses }}"
+                class="valueInput" onchange="updateDaily('expenses', this.value)">
+            </div>
+            <div>
+                <strong>Balance:</strong>
+                <span id="dailyBalance">{{ dailyData.balance }}</span>
+            </div>
+            <div>
+                <strong>Saved:</strong>
+                <span id="dailySaved">{{ dailyData.saved }}</span>
+            </div>
+            <button id="resetDailyBtn" onclick="resetDaily()">Reset</button>
+        </div>
+    </div>
+
+    <div id="parent">
+        <!-- monthly -->
+        <div class="column">
+            <h2>Monthly</h2>
+            <div id="monthly">
+                <div>
+                    <strong>Month:</strong>
+                    <span id="monthlyMonth">{{ monthlyData.month }}</span>
+                </div>
+
+                <div>
+                    <strong>Saved Last Month:</strong>
+                    <span id="monthlyMonth">{{ monthlyData.savedLastMonth }}</span>
+                </div>
+
+                <div  style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div><strong>Expense name</strong></div>
+                    <div><strong>Budget</strong></div>
+                    <div><strong>Spent</strong></div>
+                </div>
+
+                {% set ns = namespace(totalBudget=0, totalSpent=0) %}
+
+                {% for expense in monthlyData.expenses %}
+                    {% set ns.totalBudget = ns.totalBudget + expense.budget %}
+                    {% set ns.totalSpent = ns.totalSpent + expense.spent %}
+                {% endfor %}
+
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 5px;">
+                    <div><strong>Total</strong></div>
+                    <div>{{ ns.totalBudget }}</div>
+                    <div>Remaining: {{ ns.totalBudget - ns.totalSpent }}</div>
+                </div>
+
+                {% for expense in monthlyData.expenses %}
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 5px;">
+                    <div>{{ expense.name }}</div>
+                    <div>
+                        <input type="number" value="{{ expense.budget }}" 
+                        onchange="updateMonthlyExpense('{{ expense.name }}', 'budget', this.value)"
+                        style="width: 130px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <input type="number" value="{{ expense.spent }}" 
+                        onchange="updateMonthlyExpense('{{ expense.name }}', 'spent', this.value)"
+                        style="width: 130px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- balances -->
+        <div class="column">
+            <h2>Donation</h2>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; font-weight: bold;">
+                <div>Mosque</div>
+                <div>Madrasa</div>
+                <div>Sadqah</div>
+                <div>Empowerment</div>
+                <div>Others</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+                {% for key in ['mosque', 'madrasa', 'sadqah', 'empowerment', 'others'] %}
+                <input type="number" value="{{ balanceDonation.donations[key] }}" 
+                       onchange="updateBalanceDonation('donations', '{{ key }}', this.value)"
+                       class="valueInput">
+                {% endfor %}
+            </div>
+
+            <h2>Hustles</h2>
+            <div class="hustle-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+                <div class="hustle-item">
+                    <span>Balance</span><br>
+                    <span id="hustleBalanceValue">{{ balanceDonation.hustles.balance }}</span>
+                    <button class="hustle-button" onclick="openAmountUpdateModal('balance')">+</button>
+                </div>
+                <div class="hustle-item">
+                    <span>Capital</span><br>
+                    <span id="hustleCapitalValue">{{ balanceDonation.hustles.capital }}</span>
+                </div>
+                <div class="hustle-item">
+                    <span>Usable Amount</span><br>
+                    <span id="hustleUsableValue">{{ balanceDonation.hustles.usable }}</span>
+                    <button class="hustle-button" onclick="openAmountUpdateModal('Usable')">+</button>
+                </div>
+            </div>
+
+            <h2>Accounts</h2>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-weight: bold;">
+                <div>DBBL</div>
+                <div>Bkash</div>
+                <div>Nagad</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+                {% for key in ['dbbl', 'bkash', 'nagad'] %}
+                <input type="number" value="{{ balanceDonation.balances[key] }}" 
+                       onchange="updateBalanceDonation('balances', '{{ key }}', this.value)"
+                       class="valueInput">
+                {% endfor %}
+            </div>
+
+            <h2>Saved</h2>
+            <div class="hustle-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+                <div class="hustle-item">
+                    <span>Emergency</span><br>
+                    <span id="emergencyFundValue">{{ balanceDonation.saved.emergencyFund }}</span>
+                    <button class="hustle-button" onclick="openAmountUpdateModal('emergencyFund')">+</button>
+                </div>
+                <div class="hustle-item">
+                    <span>Savings</span><br>
+                    <span id="properSavingsValue">{{ balanceDonation.saved.properSavings }}</span>
+                    <button class="hustle-button" onclick="openAmountUpdateModal('properSavings')">+</button>
+                </div>
+                <div class="hustle-item">
+                    <span>Leftovers</span><br>
+                    <span id="unusedValue">{{ balanceDonation.saved.unused }}</span>
+                    <button class="hustle-button" onclick="openAmountUpdateModal('unused')">+</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                <div>
+                    <strong>Total Balance:</strong>
+                    {{
+                        balanceDonation.balances.dbbl +
+                        balanceDonation.balances.bkash +
+                        balanceDonation.balances.nagad
+                    }}
+                </div>
+                <div>
+                    <strong>Reserved amount:</strong>
+                    {{
+                        balanceDonation.hustles.capital +
+                        balanceDonation.donations.mosque+
+                        balanceDonation.donations.madrasa+
+                        balanceDonation.donations.sadqah+
+                        balanceDonation.donations.empowerment+
+                        balanceDonation.donations.others+
+                        balanceDonation.saved.emergencyFund+
+                        balanceDonation.saved.properSavings+
+                        balanceDonation.saved.unused
+                    }}
+                </div>
+                <div>
+                    <strong>Total Usable Balance:</strong>
+                    {{
+                        (balanceDonation.balances.dbbl +
+                        balanceDonation.balances.bkash +
+                        balanceDonation.balances.nagad)
+                        -
+                        (balanceDonation.hustles.capital +
+                        balanceDonation.donations.mosque +
+                        balanceDonation.donations.madrasa +
+                        balanceDonation.donations.sadqah +
+                        balanceDonation.donations.empowerment +
+                        balanceDonation.donations.others +
+                        balanceDonation.saved.emergencyFund +
+                        balanceDonation.saved.properSavings +
+                        balanceDonation.saved.unused)
+                    }}
+                </div>                
+            </div>
+        </div>
+
+        <!-- wishlist -->
+        <div class="wishlist-container">
+            <h2>Wishlist</h2>
+
+            <!-- adding new wish -->
+            <div class="wish-row">
+                <input type="text" id="wishInput" placeholder="Let there be a new wish" style="flex: 1;width: 350px;
+                padding: 5px;margin-bottom: 10px;border: 1px solid #ccc; border-radius: 4px;">
+                <button onclick="addWish()">Add</button>
+            </div>
+
+            <div id="wishlist" class="wish-row wish-label" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 3px;">
+                <div><strong>Wish Name</strong></div>
+                <div><strong>Priority</strong></div>
+                <div><strong>Price Tag</strong></div>
+                <div><strong>Accumulated</strong></div>       
+            </div>
+
+            <!-- Wishlist items -->
+            <div id="wishlistContainer" class="wish-row">
+                {% for wish in wishlistData.wishes %}
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px;">
+                    <div>{{ wish.name }}</div>
+                    <!-- <div>{{ wish.priority }}</div> -->
+                    
+                    <select onchange="updateWish('{{ wish.name }}', 'priority', this.value)">
+                        <option value="High" {{ 'selected' if wish.priority == 'High' else '' }}>High</option>
+                        <option value="Medium" {{ 'selected' if wish.priority == 'Medium' else '' }}>Medium</option>
+                        <option value="Low" {{ 'selected' if wish.priority == 'Low' else '' }}>Low</option>
+                    </select>
+                    
+                    <div>
+                        <input type="number" value="{{ wish.price }}" class="wish-input valueInput"
+                            onchange="updateWish('{{ wish.name }}', 'price', this.value)">
+                    </div>
+                
+                    <div>
+                        <input type="number" value="{{ wish.accumulated }}" class="wish-input valueInput"
+                            onchange="updateWish('{{ wish.name }}', 'accumulated', this.value)">
+                    </div>
+
+                    <div>
+                        <button class="delete-btn" onclick="deleteWish('{{ wish.name }}')">🗑️</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="amountUpdateModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Add the amount</h3>
+            <input type="number" id="amountInput" class="valueInput" placeholder="Enter amount">
+            <button onclick="submitModal()">Add</button>
+        </div>
+    </div>
+</body>
+
+<script>
+    let currentField = "";
+
+    function updateDaily(field, value){
+        fetch('/updateDaily', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                field: field,
+                value: value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success){
+                document.getElementById('dailyBalance').innerText = data.balance;
+                document.getElementById('dailySaved').innerText = data.saved;
+                document.getElementById('dailyExpense').innerText = data.expenses;
+                document.getElementById('dailyDate').innerText = data.date;
+            }
+        })
+    }
+
+    function resetDaily() {
+        fetch("/resetDaily", { method: "POST" })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                }
+            });
+    }
+
+    function updateMonthlyExpense(name, field, value){
+        fetch('/updateMonthlyExpense', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                field: field,
+                value: value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success){
+                console.log("Monthly expense updated successfully.");
+            }
+        })
+    }
+
+    function addWish(){
+        const input = document.getElementById('wishInput');
+        const wishName = input.value.trim();
+
+        if (!wishName) {
+            alert("Wish name cannot be empty");
+            return;
+        }
+
+        fetch('/addWish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: wishName })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function updateWish(name, field, value) {
+        fetch('/updateWish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, field, value })
+        });
+    }
+
+    function deleteWish(name) {
+        fetch('/deleteWish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+
+    function updateBalanceDonation(fieldType, name, value) {
+        fetch('/update_balance_donation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ field_type: fieldType, name: name, value: value })
+        });
+    }
+
+    function openAmountUpdateModal(type) {
+        currentField = type;
+        document.getElementById('amountInput').value = '';
+        document.getElementById('amountUpdateModal').style.display = 'block';
+    }
+
+    function submitModal() {
+        const amount = parseFloat(document.getElementById('amountInput').value);
+        const hustleBalance = document.getElementById('hustleBalanceValue');
+        const hustleCapital = document.getElementById('hustleCapitalValue');
+        const hustleUsable = document.getElementById('hustleUsableValue');
+
+        if (!amount || isNaN(amount) || amount <= 0) {
+            return;
+        }
+
+        if(currentField==='balance') {
+            const newBalance = parseInt(hustleBalance.innerText || 0) + amount;
+            const capital = Math.floor(newBalance * 0.7);
+            const usable = newBalance - capital;
+
+            hustleBalance.innerText = newBalance;
+            hustleCapital.innerText = capital;
+            hustleUsable.innerText = usable;
+
+            updateBalanceDonation('hustles', 'balance', newBalance);
+            updateBalanceDonation('hustles', 'capital', capital);
+            updateBalanceDonation('hustles', 'usable', usable);
+        } 
+        else if(currentField==='Usable') {
+            const newUsable = parseInt(hustleUsable.innerText || 0) - amount;
+            hustleUsable.innerText = newUsable;
+
+            updateBalanceDonation('hustles', 'usable', updated);
+        }
+        else if(currentField==='emergencyFund'){
+            const emergencyFund = document.getElementById('emergencyFundValue');
+            const newEmergencyFund = parseInt(emergencyFund.innerText || 0) + amount;
+            emergencyFund.innerText = newEmergencyFund;
+
+            updateBalanceDonation('saved', 'emergencyFund', newEmergencyFund);
+        }
+        else if(currentField==='properSavings'){
+            const properSavings = document.getElementById('properSavingsValue');
+            const newProperSavings = parseInt(properSavings.innerText || 0) + amount;
+            properSavings.innerText = newProperSavings;
+
+            updateBalanceDonation('saved', 'properSavings', newProperSavings);
+        }
+        else if(currentField==='unused'){
+            const unused = document.getElementById('unusedValue');
+            const newUnused = parseInt(unused.innerText || 0) + amount;
+            unused.innerText = newUnused;
+
+            updateBalanceDonation('saved', 'unused', newUnused);
+        }
+
+        closeModal();
+    }
+
+    function closeModal() {
+        document.getElementById('amountUpdateModal').style.display = 'none';
+    }
+</script>
+</html>
