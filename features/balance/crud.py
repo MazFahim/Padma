@@ -1,14 +1,9 @@
 from pymongo import MongoClient
-# from config import MONGO_URI
+from config import MONGO_URI
 from datetime import datetime
 from bson import ObjectId
 from cryptography.fernet import Fernet
-from dotenv import load_dotenv
-import os
 
-# client = MongoClient(MONGO_URI)
-load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client["padma"]
 collection = db["balances"]
@@ -17,8 +12,11 @@ portfolio_collection = db["portfolio"]
 
 #balance functions
 def get_daily_balances():
-    data = collection.find_one({}, {"_id": 0})
+    data = collection.find_one({"_id": ObjectId('67b54a0ee2ce97161b1092ad')})
     today = datetime.today().strftime("%Y-%m-%d")
+
+    print('data:', data)
+    print(today)
     
     if not data:
         data = {"date": today, "budget": 200, "expenses": 0, "balance": 200, "saved": 0}
@@ -26,16 +24,16 @@ def get_daily_balances():
     elif data["date"] != today:
         saved = data["saved"] + data["balance"]
         data = {"date": today, "budget": 200, "expenses": 0, "balance": 200, "saved": saved}
-        collection.update_one({}, {"$set": data})
+        collection.update_one({"_id": ObjectId('67b54a0ee2ce97161b1092ad')}, {"$set": data})
 
     data["balance"] = data["budget"] - data["expenses"]
-    collection.update_one({}, {"$set": {"balance": data["balance"]}})
+    collection.update_one({"_id": ObjectId('67b54a0ee2ce97161b1092ad')}, {"$set": {"balance": data["balance"]}})
 
     return data
 
 
 def update_daily_balance(field, value):
-    collection.update_one({}, {"$set": {field: value}}, upsert=True)
+    collection.update_one({"_id": ObjectId('67b54a0ee2ce97161b1092ad')}, {"$set": {field: value}}, upsert=True)
 
     updated = collection.find_one({})
     budget = updated.get("budget", 200)
