@@ -27,7 +27,7 @@ def update_daily():
 
 @balance_bp.route('/resetDaily', methods=['POST'])
 def reset_daily_route():
-    reset_daily_and_distribute() 
+    reset_daily_balance() 
     return jsonify({"success": True})
 
 @balance_bp.route('/updateMonthlyExpense', methods=['POST'])
