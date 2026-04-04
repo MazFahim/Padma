@@ -15,13 +15,10 @@ collection = db["balances"]
 portfolio_collection = db["portfolio"]
 
 
-#balance functions
+
 def get_daily_balances():
     data = collection.find_one({"_id": ObjectId('67b54a0ee2ce97161b1092ad')})
     today = datetime.today().strftime("%Y-%m-%d")
-
-    print('data:', data)
-    print(today)
     
     if not data:
         data = {"date": today, "budget": 200, "expenses": 0, "balance": 200, "saved": 0}
@@ -46,6 +43,17 @@ def update_daily_balance(field, value):
     balance = budget - expenses
 
     collection.update_one({}, {"$set": {"balance": balance}})
+
+
+def reset_daily_balance():
+    daily = collection.find_one({}, {"_id": 0})
+    balance_doc = collection.find_one({"type": "balance_donation"})
+
+    if not daily or not balance_doc:
+        return
+
+    # reset daily saved to 0
+    collection.update_one({}, {"$set": {"saved": 0}})
 
 
 def get_monthly_expense():
@@ -174,27 +182,3 @@ def update_balance_donation(field_type, field_name, value):
         {"$set": {f"{field_type}.{field_name}": value}},
         upsert=True
     )
-
-def reset_daily_and_distribute():
-    daily = collection.find_one({}, {"_id": 0})
-    balance_doc = collection.find_one({"type": "balance_donation"})
-
-    if not daily or not balance_doc:
-        return
-
-    saved_amount = daily.get("saved", 0)
-    if saved_amount > 0:
-        portion = saved_amount // 3
-        remainder = saved_amount % 3  
-
-        collection.update_one(
-            {"type": "balance_donation"},
-            {"$inc": {
-                "saved.emergencyFund": portion,
-                "saved.properSavings": portion,
-                "saved.unused": portion + remainder
-            }}
-        )
-
-    # reset daily saved to 0
-    collection.update_one({}, {"$set": {"saved": 0}})
