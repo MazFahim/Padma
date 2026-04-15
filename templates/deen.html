@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deen</title>
+    <style>
+        body, nav {
+            margin: 0 ;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="container mt-4" style="max-width: 850px; margin-left: 5% !important;">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark">
+            <tr>
+                <th style="width: 20%;">Category</th>
+                <th style="width: 40%;">Last Stage</th>
+                <th style="width: 40%;">Next Stage</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+            <tr data-category="{{ row.category }}">
+                <td>{{ row.category }}</td>
+                <td contenteditable="true" class="editable last-stage" style="white-space: pre-wrap; word-wrap: break-word;">{{ row.last_stage }}</td>
+                <td contenteditable="true" class="editable next-stage" style="white-space: pre-wrap; word-wrap: break-word;">{{ row.next_stage }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+<script>
+  document.querySelectorAll('.editable').forEach(cell => {
+    cell.addEventListener('blur', () => {
+      const row = cell.closest('tr');
+      const category = row.dataset.category;
+      const last_stage = row.querySelector('.last-stage').innerText.trim();
+      const next_stage = row.querySelector('.next-stage').innerText.trim();
+
+      fetch('/deen/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, last_stage, next_stage })
+      });
+    });
+  });
+</script>
+</html>
