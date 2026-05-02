@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community</title>
+    <style>
+        body, nav {
+            margin: 0 ;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    {% include '_navbar.html' %}
+
+    <div class="container mt-4" style="max-width: 850px; margin: 2% auto !important;">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-dark">
+            <tr>
+                <th style="width: 20%;">Category</th>
+                <th style="width: 40%;">Last Stage</th>
+                <th style="width: 40%;">Next Stage</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+            <tr data-category="{{ row.category }}">
+                <td>{{ row.category }}</td>
+                <td contenteditable="true" class="editable last-stage" style="white-space: pre-wrap; word-wrap: break-word;">{{ row.last_stage }}</td>
+                <td contenteditable="true" class="editable next-stage" style="white-space: pre-wrap; word-wrap: break-word;">{{ row.next_stage }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container mt-5" style="max-width: 98%;">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-4">
+            {% for item in wishlist %}
+            <div class="col">
+            <div class="card h-100">
+                <div class="card-header fw-bold">{{ item.category }}</div>
+                <div class="card-body">
+                <ul class="list-group list-group-flush" id="wishes-{{ loop.index }}">
+                    {% for wish in item.wishes %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center"
+                        data-category="{{ item.category }}"
+                        data-wish="{{ wish }}">
+                    <span class="wish-text" contenteditable="false">{{ wish }}</span>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary edit-btn">✏️</button>
+                        <button class="btn btn-outline-danger delete-btn">🗑️</button>
+                    </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                </div>
+                <div class="card-footer">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control new-wish-input" placeholder="Add wish...">
+                    <button class="btn btn-outline-primary add-btn" data-category="{{ item.category }}">+</button>
+                </div>
+                </div>
+            </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+<script>
+  document.querySelectorAll('.editable').forEach(cell => {
+    cell.addEventListener('blur', () => {
+      const row = cell.closest('tr');
+      const category = row.dataset.category;
+      const last_stage = row.querySelector('.last-stage').innerText.trim();
+      const next_stage = row.querySelector('.next-stage').innerText.trim();
+
+      fetch('/study/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, last_stage, next_stage })
+      });
+    });
+  });
+
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const li = btn.closest('li');
+      const category = li.dataset.category;
+      const wish = li.dataset.wish;
+      fetch('/study/wishlist/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, wish })
+      }).then(() => li.remove());
+    });
+  });
+
+  // Edit
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const li = btn.closest('li');
+      const span = li.querySelector('.wish-text');
+      if (span.contentEditable === 'true') {
+        const old_wish = li.dataset.wish;
+        const new_wish = span.innerText.trim();
+        fetch('/study/wishlist/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: li.dataset.category, old_wish, new_wish })
+        }).then(() => {
+          li.dataset.wish = new_wish;
+          span.contentEditable = 'false';
+          btn.textContent = '✏️';
+        });
+      } else {
+        span.contentEditable = 'true';
+        span.focus();
+        btn.textContent = '✅';
+      }
+    });
+  });
+
+  // Add
+  document.querySelectorAll('.add-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const category = btn.dataset.category;
+      const input = btn.closest('.input-group').querySelector('.new-wish-input');
+      const wish = input.value.trim();
+      if (!wish) return;
+      fetch('/study/wishlist/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category, wish })
+      }).then(() => {
+        const ul = btn.closest('.card').querySelector('ul');
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.dataset.category = category;
+        li.dataset.wish = wish;
+        li.innerHTML = `
+          <span class="wish-text" contenteditable="false">${wish}</span>
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-outline-secondary edit-btn">✏️</button>
+            <button class="btn btn-outline-danger delete-btn">🗑️</button>
+          </div>`;
+        ul.appendChild(li);
+        input.value = '';
+        attachListeners(li);
+      });
+    });
+  });
+
+  function attachListeners(li) {
+    li.querySelector('.delete-btn').addEventListener('click', () => {
+      fetch('/study/wishlist/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: li.dataset.category, wish: li.dataset.wish })
+      }).then(() => li.remove());
+    });
+
+    li.querySelector('.edit-btn').addEventListener('click', () => {
+      const span = li.querySelector('.wish-text');
+      const editBtn = li.querySelector('.edit-btn');
+      if (span.contentEditable === 'true') {
+        const old_wish = li.dataset.wish;
+        const new_wish = span.innerText.trim();
+        fetch('/study/wishlist/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: li.dataset.category, old_wish, new_wish })
+        }).then(() => {
+          li.dataset.wish = new_wish;
+          span.contentEditable = 'false';
+          editBtn.textContent = '✏️';
+        });
+      } else {
+        span.contentEditable = 'true';
+        span.focus();
+        editBtn.textContent = '✅';
+      }
+    });
+  }
+</script>
+</html>
